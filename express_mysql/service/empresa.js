@@ -3,7 +3,42 @@ import  pool  from '../data/index.js';
 export const consultar = async (filtro = '') => {
     try {
         const cx = await pool.getConnection();
-        const cmdSql = `SELECT * FROM empresa WHERE empresa.nome LIKE ?`;
+        const cmdSql = `SELECT * FROM perfumes WHERE perfumes.nome LIKE ?`;
+        const [dados, meta_dados] = await cx.query(cmdSql, [`%${filtro}%`]);
+        cx.release();
+        return dados;
+    } catch (error) {
+        throw error;
+    }
+};
+export const cadastrar = async (nome, marca) => {
+    try {
+        const cx = await pool.getConnection();
+        // Inserir os dados na tabela empresa
+        const cmdSql = 'INSERT INTO perfumes(nome, marca) VALUES (?, ?)';
+        await cx.query(cmdSql, [nome, marca]);
+
+        // Recuperar o último ID inserido
+        const [result] = await cx.query('SELECT LAST_INSERT_ID() as lastId');
+        const lastId = result[0].lastId;
+
+        // Consultar a empresa recém-cadastrada pelo último ID
+        const [dados, meta_dados] = await cx.query('SELECT * FROM perfumes WHERE id = ?', [lastId]);
+        cx.release();
+        return dados;
+    } catch (error) {
+        throw error;
+    }
+};
+
+/*
+Cadastrar usuario
+*/
+
+export const consultarUser = async (filtro = '') => {
+    try {
+        const cx = await pool.getConnection();
+        const cmdSql = `SELECT * FROM user WHERE user.nome LIKE ?`;
         const [dados, meta_dados] = await cx.query(cmdSql, [`%${filtro}%`]);
         cx.release();
         return dados;
@@ -12,69 +47,22 @@ export const consultar = async (filtro = '') => {
     }
 };
 
-export const consultarPorId = async (id) => {
-    try {        
+export const cadastrarUser = async (nome, senha, gmail) => {
+    try {
         const cx = await pool.getConnection();
-        const cmdSql = 'SELECT * FROM empresa WHERE empresa.id = ?';
-        const [dados, meta_dados] = await cx.query(cmdSql,[id]);
+        // Inserir os dados na tabela empresa
+        const cmdSql = 'INSERT INTO user(nome, senha, gmail) VALUES (?, ?, ?)';
+        await cx.query(cmdSql, [nome, senha, gmail]);
+
+        // Recuperar o último ID inserido
+        const [result] = await cx.query('SELECT LAST_INSERT_ID() as lastId');
+        const lastId = result[0].lastId;
+
+        // Consultar a empresa recém-cadastrada pelo último ID
+        const [dados, meta_dados] = await cx.query('SELECT * FROM user WHERE id = ?', [lastId]);
         cx.release();
         return dados;
     } catch (error) {
         throw error;
     }
 };
-
-export const cadastrar = async (Nome, ValorDeMercado) => {
-    try {
-        const cx = await pool.getConnection();
-        const cmdSql = 'INSERT INTO empresa(Nome, ValorDeMercado) VALUES (?, ?)';
-        const [execucao] = await cx.query(cmdSql, [Nome, ValorDeMercado]);        
-        if(execucao.affectedRows > 0){
-            const [result] = await cx.query('SELECT LAST_INSERT_ID() as lastId');
-            const lastId = result[0].lastId;
-            const [novaEmpresa, meta_dados] = await cx.query('SELECT * FROM empresa WHERE id = ?', [lastId]);
-            cx.release();
-            return novaEmpresa;
-        }
-        cx.release();
-        return execucao;
-
-    } catch (error) {
-        throw error;
-    }
-};
-
-export const alterar = async (Id, Nome, ValorDeMercado) => {
-    try {
-        const cx = await pool.getConnection();
-        const cmdSql = 'UPDATE empresa SET Nome = ?,ValorDeMercado = ? WHERE Id = ?';
-        const [execucao] = await cx.query(cmdSql, [Nome, ValorDeMercado, Id]);
-        if(execucao.affectedRows > 0){            
-            const [empresaAlterada, meta_dados] = await cx.query('SELECT * FROM empresa WHERE id = ?', [Id]);
-            cx.release();
-            return empresaAlterada;
-        }
-        cx.release();
-        return execucao;
-    } catch (error) {
-        throw error;
-    }
-};
-
-export const deletar = async (Id) => {
-    try {
-        const cx = await pool.getConnection();
-        const cmdSql = 'DELETE FROM empresa WHERE Id = ?';
-        const [execucao] = await cx.query(cmdSql, [Id]);
-        if(execucao.affectedRows > 0){ 
-            cx.release();
-            return [];
-        }        
-        cx.release();
-        return 'Recurso não foi encontrado';
-    } catch (error) {
-        throw error;
-    }
-};
-
-
